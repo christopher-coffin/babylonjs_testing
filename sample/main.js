@@ -49,15 +49,30 @@ let addArcRotateCamera = function(scene) {
 let addTexturedPlanes = function(scene) {
     // Create material from image with alpha
     var mat = new BABYLON.StandardMaterial("dog", scene);
-    mat.diffuseTexture = new BABYLON.Texture("https://upload.wikimedia.org/wikipedia/commons/8/87/Alaskan_Malamute%2BBlank.png", scene);
-    mat.diffuseTexture.hasAlpha = true;
-    mat.backFaceCulling = false;
+    //let srcTex = new BABYLON.Texture("https://upload.wikimedia.org/wikipedia/commons/8/87/Alaskan_Malamute%2BBlank.png", scene);
+    let srcTex = new BABYLON.Texture("/textures/townhall_R/townhall_R_nx.JPG", scene,
+                                    undefined, undefined, undefined, 
+                                    () => {//onLoad
+        //srcTex.readPixels(0, 0, buffer);
+        let buffer = new Uint8Array(4*512*512);
+        b2 = srcTex.readPixels();
+        console.log('got it', b2);
+        let dstTex = new BABYLON.RawTexture(buffer, 512, 512, BABYLON.Engine.TEXTUREFORMAT_RGBA, 
+            scene, false, false, BABYLON.Texture.NEAREST_SAMPLINGMODE,
+            BABYLON.Texture.UNSIGNED_BYTE);
+        //dstTex.update(buffer);
+        dstTex.update(b2);
+        mat.diffuseTexture = dstTex;
+        mat.diffuseTexture.hasAlpha = true;
+        mat.backFaceCulling = false;
 
-    for (let i = 0; i < 10; i++) {
+        for (let i = 0; i < 10; i++) {
         var plane = BABYLON.Mesh.CreatePlane("plane", 0.5, scene);
         plane.position = new BABYLON.Vector3(2.0, 1, i*0.05);
         plane.material = mat;
-    }
+        }
+    });
+    //mat.diffuseTexture.update(buffer);
 
     // Apply material to a box
     //var box = BABYLON.MeshBuilder.CreateBox("box", {}, scene);
@@ -154,7 +169,6 @@ let createScene = function () {
 
     mesh.material = myMaterial;
 */
-    addTexturedPlanes(scene);
 
     engine.runRenderLoop(function () {
         if (scene) {
@@ -165,6 +179,9 @@ let createScene = function () {
     // Resize
     window.addEventListener("resize", function () {
         engine.resize();
+    });
+    scene.executeWhenReady(() => {
+        addTexturedPlanes(scene);
     });
     
     return scene;
