@@ -46,7 +46,7 @@ let addArcRotateCamera = function(scene) {
                                             scene);
 }
 
-let addTexturedPlanes = function(scene) {
+let addTexturedPlanes = function(scene, shaderMaterial) {
     // Create material from image with alpha
     var mat = new BABYLON.StandardMaterial("dog", scene);
     //let srcTex = new BABYLON.Texture("https://upload.wikimedia.org/wikipedia/commons/8/87/Alaskan_Malamute%2BBlank.png", scene);
@@ -66,10 +66,14 @@ let addTexturedPlanes = function(scene) {
         mat.diffuseTexture.hasAlpha = true;
         mat.backFaceCulling = false;
 
+        shaderMaterial.setTexture("textureSampler", dstTex);
+        shaderMaterial.setFloat("exposure", 0.8);
+        shaderMaterial.backFaceCulling = false;
+
         for (let i = 0; i < 10; i++) {
-        var plane = BABYLON.Mesh.CreatePlane("plane", 0.5, scene);
-        plane.position = new BABYLON.Vector3(2.0, 1, i*0.05);
-        plane.material = mat;
+            var plane = BABYLON.Mesh.CreatePlane("plane", 0.5, scene);
+            plane.position = new BABYLON.Vector3(2.0, 1, i*0.05);
+            plane.material = shaderMaterial;
         }
     });
     //mat.diffuseTexture.update(buffer);
@@ -77,6 +81,24 @@ let addTexturedPlanes = function(scene) {
     // Apply material to a box
     //var box = BABYLON.MeshBuilder.CreateBox("box", {}, scene);
     //box.material = mat;
+}
+
+let addShaderMaterial = function (scene) {
+    var shaderMaterial = new BABYLON.ShaderMaterial("shader", scene, "./shaders/simple_shader",
+    {
+        attributes: ["position", "normal", "uv"],
+        uniforms: ["world", "worldView", "worldViewProjection", "view" ]
+    });    
+    return shaderMaterial;
+}
+
+let addTextureShaderMaterial = function (scene) {
+    var shaderMaterial = new BABYLON.ShaderMaterial("shader", scene, "./shaders/exposure_shader",
+    {
+        attributes: ["position", "normal", "uv"],
+        uniforms: ["world", "worldView", "worldViewProjection", "view", "textureSampler", "exposure" ]
+    });    
+    return shaderMaterial;
 }
 
 let createScene = function () {
@@ -90,6 +112,10 @@ let createScene = function () {
     scene.ambientColor = new BABYLON.Color3(0.3, 0.3, 0.3);
 
     // Create simple sphere
+    var shaderSphere = BABYLON.Mesh.CreateIcoSphere("sphere", {radius:0.2, flat:true, subdivisions: 1}, this.scene);
+    shaderSphere.position.y = 2;
+    shaderSphere.material = addShaderMaterial(scene);
+
     var sphere = BABYLON.Mesh.CreateIcoSphere("sphere", {radius:0.2, flat:true, subdivisions: 1}, this.scene);
     sphere.position.y = 3;
     sphere.material = new BABYLON.StandardMaterial("sphere material",scene)
@@ -180,8 +206,9 @@ let createScene = function () {
     window.addEventListener("resize", function () {
         engine.resize();
     });
+
     scene.executeWhenReady(() => {
-        addTexturedPlanes(scene);
+        addTexturedPlanes(scene, addTextureShaderMaterial(scene));
     });
     
     return scene;
