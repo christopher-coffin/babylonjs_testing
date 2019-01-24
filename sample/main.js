@@ -13,6 +13,8 @@ var colors = {
     gray: BABYLON.Color3.FromHexString("#7f8c8d")
 }
 
+var shaderMatList = [];
+
 let addVRSupport = function() {
     let VRHelper = scene.createDefaultVRExperience();
     VRHelper.enableTeleportation({floorMeshName: "ground"});
@@ -46,7 +48,7 @@ let addArcRotateCamera = function(scene) {
                                             scene);
 }
 
-let addTexturedPlanes = function(scene, shaderMaterial) {
+/* // texture load example
     // Create material from image with alpha
     var mat = new BABYLON.StandardMaterial("dog", scene);
     //let srcTex = new BABYLON.Texture("https://upload.wikimedia.org/wikipedia/commons/8/87/Alaskan_Malamute%2BBlank.png", scene);
@@ -76,6 +78,22 @@ let addTexturedPlanes = function(scene, shaderMaterial) {
             plane.material = shaderMaterial;
         }
     });
+*/
+
+let addTexturedPlanes = function(scene, shaderMaterial) {
+
+    for (let i = 0; i < 100; i++) {
+        var plane = BABYLON.Mesh.CreatePlane("plane", 0.5, scene);
+        plane.position = new BABYLON.Vector3(2.0, 1, i*0.05);
+        let srcTex = new BABYLON.Texture("./sample1/"+String(i).padStart(8, "0")+".png", scene);
+        let mc = shaderMaterial.clone();
+        plane.material = mc;
+        shaderMatList.push(mc);
+        plane.material.backFaceCulling = false;
+        plane.material.setTexture("textureSampler", srcTex);
+        plane.material.setFloat("exposure", 1.0);
+		plane.hasVertexAlpha = true;
+    }
     //mat.diffuseTexture.update(buffer);
 
     // Apply material to a box
@@ -97,7 +115,14 @@ let addTextureShaderMaterial = function (scene) {
     {
         attributes: ["position", "normal", "uv"],
         uniforms: ["world", "worldView", "worldViewProjection", "view", "textureSampler", "exposure" ]
-    });    
+    });
+    // tie in slider for exposure change
+    let slide = document.getElementById('myRange');
+    slide.onchange = function() {
+        for (let i = 0; i < shaderMatList.length; i++)
+            shaderMatList[i].setFloat("exposure", this.value/50.0);
+    };
+    shaderMaterial.needsAlphaBlending = true;
     return shaderMaterial;
 }
 
